@@ -28,6 +28,7 @@ OpsPilot connects KPI monitoring with a reproducible investigation and decision 
 5. Detect consecutive-month delivery deterioration of at least 5 percentage points.
 6. Investigate overall, geographic and seller-level contributors.
 7. Generate a deterministic Markdown incident brief.
+8. Export compact, validated datasets for Power BI.
 
 ## Architecture
 
@@ -39,6 +40,7 @@ OpsPilot connects KPI monitoring with a reproducible investigation and decision 
 | KPI and detection layer | SQL views |
 | Investigation layer | Transaction-scoped SQL analysis |
 | Decision layer | Deterministic Python Markdown generator |
+| BI interface | Deterministic aggregate CSV exports |
 
 ## Verified case study
 
@@ -69,11 +71,13 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 | `scripts/clean_olist.py` | Cleans and validates Olist data |
 | `scripts/load_postgres.py` | Loads PostgreSQL and verifies row counts |
 | `scripts/generate_delivery_brief.py` | Generates the decision brief |
+| `scripts/export_powerbi_data.py` | Exports validated Power BI datasets |
 | `sql/schema.sql` | Defines the relational schema |
 | `sql/analytics_views.sql` | Builds the order fact view |
 | `sql/kpis.sql` | Defines monthly KPIs |
 | `sql/delivery_detection.sql` | Detects delivery deterioration |
 | `sql/investigate_delivery_issue.sql` | Investigates the worst issue |
+| `data/exports/powerbi/` | Contains portable aggregate BI datasets |
 | `reports/` | Contains generated decision outputs |
 | `.env.example` | Documents database configuration |
 
@@ -174,9 +178,37 @@ An alternative output path can also be supplied:
     --output /tmp/delivery-incident-brief.md
 ~~~
 
+## Power BI data export
+
+Generate the portable analytical datasets:
+
+~~~bash
+.venv/bin/python scripts/export_powerbi_data.py
+~~~
+
+The exporter writes four deterministic CSV files to `data/exports/powerbi/`:
+
+| Dataset | Grain | Purpose |
+| --- | --- | --- |
+| `monthly_kpis.csv` | One row per month | Monthly order, delivery and review trends |
+| `delivery_comparisons.csv` | One row per month-over-month comparison | Delivery changes, issue flags and severity |
+| `delivery_issue_states.csv` | Up to 15 qualifying states per detected issue | Geographic concentration of late deliveries |
+| `delivery_issue_sellers.csv` | Up to 15 qualifying sellers per detected issue | Seller-cohort investigation signals |
+
+The detail exports retain the investigation's minimum sample thresholds. They contain aggregate analytical results and exclude order IDs and customer identifiers.
+
+An alternative output directory can be supplied with:
+
+~~~bash
+.venv/bin/python scripts/export_powerbi_data.py \
+    --output-dir /tmp/opspilot-powerbi
+~~~
+
+The four files can be imported directly into Power BI Desktop.
+
 ## Tests
 
-The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies default and explicit incident selection, the five-result-set SQL contract, deterministic report generation, analytical findings and secret exclusion.
+The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies issue selection, the five-result-set investigation contract, deterministic report generation, Power BI export contracts, analytical findings and secret exclusion.
 
 ~~~bash
 set -a
@@ -218,12 +250,12 @@ The current implementation includes:
 
 ## Roadmap
 
-1. Add automated CI for repeatable validation.
-2. Add a small API after the analytical interface is stable.
-3. Add a focused BI or web view for issue history.
+1. Build a focused Power BI report from the validated export datasets.
+2. Add automated CI for repeatable validation.
+3. Add a small API after the analytical interface is stable.
 4. Optionally add an LLM explanation layer constrained to verified results.
 5. Containerize and deploy after local behavior is fully tested.
 
 ## Current status
 
-The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation and deterministic decision brief are implemented and reproducible.
+The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief and Power BI export layer are implemented and reproducible.
