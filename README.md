@@ -164,6 +164,22 @@ The default report is written to `reports/delivery-incident-2018-02.md`. An alte
     --output /tmp/delivery-incident-brief.md
 ~~~
 
+## Tests
+
+The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies the selected incident, five-result-set SQL contract, deterministic report generation, analytical findings and secret exclusion.
+
+~~~bash
+set -a
+source .env
+set +a
+
+.venv/bin/python -m unittest \
+    discover \
+    --start-directory tests \
+    --pattern 'test_*.py' \
+    --verbose
+~~~
+
 ## Quality controls
 
 The current implementation includes:
