@@ -1,7 +1,10 @@
 BEGIN;
 
 /*
-Select the most severe detected delivery issue.
+Select the most severe detected delivery issue by default.
+
+Set the optional opspilot.current_month session parameter to
+investigate a specific qualifying issue.
 
 The detection rule requires consecutive months and an on-time
 delivery deterioration of at least 5 percentage points. Larger
@@ -10,14 +13,30 @@ tie-breaking.
 */
 
 CREATE TEMPORARY VIEW investigation_settings AS
+WITH requested_issue AS (
+    SELECT
+        NULLIF(
+            current_setting(
+                'opspilot.current_month',
+                true
+            ),
+            ''
+        )::DATE AS current_month
+)
 SELECT
     comparison.previous_month,
     comparison.current_month,
     50::BIGINT AS minimum_region_orders,
     20::BIGINT AS minimum_seller_orders
 FROM opspilot.monthly_delivery_comparison AS comparison
+CROSS JOIN requested_issue AS requested
 WHERE comparison.is_consecutive_month
   AND comparison.on_time_delivery_change_pp <= -5.00
+  AND (
+      requested.current_month IS NULL
+      OR comparison.current_month
+            = requested.current_month
+  )
 ORDER BY
     comparison.on_time_delivery_change_pp ASC,
     comparison.current_delivery_kpi_order_count DESC,

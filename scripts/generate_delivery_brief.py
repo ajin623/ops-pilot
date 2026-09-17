@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,10 @@ SELECT
 FROM opspilot.monthly_delivery_comparison
 WHERE is_consecutive_month
   AND on_time_delivery_change_pp <= -5.00
+  AND (
+      %s::DATE IS NULL
+      OR current_month = %s::DATE
+  )
 ORDER BY
     on_time_delivery_change_pp ASC,
     current_delivery_kpi_order_count DESC,
@@ -168,19 +173,51 @@ def markdown_table(
 
 def fetch_selected_issue(
     connection: psycopg.Connection[Any],
+    requested_current_month: date | None = None,
 ) -> dict[str, Any]:
-    """Fetch the most severe qualifying delivery issue."""
+    """Fetch the requested issue or the most severe issue."""
 
     with connection.cursor(row_factory=dict_row) as cursor:
-        cursor.execute(TARGET_QUERY)
+        cursor.execute(
+            TARGET_QUERY,
+            (
+                requested_current_month,
+                requested_current_month,
+            ),
+        )
         issue = cursor.fetchone()
 
     if issue is None:
+        if requested_current_month is not None:
+            raise RuntimeError(
+                "No qualifying delivery issue was detected for "
+                f"{requested_current_month:%Y-%m}."
+            )
+
         raise RuntimeError(
             "No qualifying delivery issue was detected."
         )
 
     return issue
+
+
+def configure_investigation_target(
+    connection: psycopg.Connection[Any],
+    current_month: date,
+) -> None:
+    """Set the session-scoped investigation target."""
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT set_config(
+                'opspilot.current_month',
+                %s,
+                false
+            );
+            """,
+            (current_month.isoformat(),),
+        )
 
 
 def execute_investigation(
@@ -640,14 +677,50 @@ def build_report(
     return "\n".join(report_lines)
 
 
+def parse_month(value: str) -> date:
+    """Parse a command-line month in YYYY-MM format."""
+
+    parts = value.split("-")
+
+    if (
+        len(parts) != 2
+        or len(parts[0]) != 4
+        or len(parts[1]) != 2
+        or not parts[0].isdigit()
+        or not parts[1].isdigit()
+    ):
+        raise argparse.ArgumentTypeError(
+            "month must use YYYY-MM format"
+        )
+
+    try:
+        return date(
+            int(parts[0]),
+            int(parts[1]),
+            1,
+        )
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(
+            "month must use YYYY-MM format"
+        ) from error
+
 def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments."""
 
     parser = argparse.ArgumentParser(
         description=(
-            "Generate a Markdown brief for the most severe "
-            "detected delivery issue."
+            "Generate a Markdown brief for a detected "
+            "delivery issue."
         )
+    )
+
+    parser.add_argument(
+        "--current-month",
+        type=parse_month,
+        help=(
+            "Optional issue month in YYYY-MM format. "
+            "The default is the most severe detected issue."
+        ),
     )
 
     parser.add_argument(
@@ -677,7 +750,15 @@ def main() -> int:
     with psycopg.connect(
         **connection_arguments()
     ) as connection:
-        issue = fetch_selected_issue(connection)
+        issue = fetch_selected_issue(
+            connection,
+            arguments.current_month,
+        )
+
+        configure_investigation_target(
+            connection,
+            issue["current_month"],
+        )
 
         result_sets = execute_investigation(
             connection,

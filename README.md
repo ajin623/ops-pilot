@@ -157,16 +157,26 @@ Generate the Markdown brief:
 .venv/bin/python scripts/generate_delivery_brief.py
 ~~~
 
-The default report is written to `reports/delivery-incident-2018-02.md`. An alternative path can be supplied with:
+Without `--current-month`, the generator selects the most severe qualifying issue and writes the report to its derived month-based path.
+
+Generate a brief for a specific detected issue:
 
 ~~~bash
 .venv/bin/python scripts/generate_delivery_brief.py \
+    --current-month 2018-08
+~~~
+
+An alternative output path can also be supplied:
+
+~~~bash
+.venv/bin/python scripts/generate_delivery_brief.py \
+    --current-month 2018-08 \
     --output /tmp/delivery-incident-brief.md
 ~~~
 
 ## Tests
 
-The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies the selected incident, five-result-set SQL contract, deterministic report generation, analytical findings and secret exclusion.
+The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies default and explicit incident selection, the five-result-set SQL contract, deterministic report generation, analytical findings and secret exclusion.
 
 ~~~bash
 set -a
@@ -208,12 +218,11 @@ The current implementation includes:
 
 ## Roadmap
 
-1. Add automated tests for the Python and SQL result contract.
-2. Allow explicit selection of any detected issue month.
-3. Add a small API after the analytical interface is stable.
-4. Add a focused BI or web view for issue history.
-5. Optionally add an LLM explanation layer constrained to verified results.
-6. Containerize and deploy after local behavior is fully tested.
+1. Add automated CI for repeatable validation.
+2. Add a small API after the analytical interface is stable.
+3. Add a focused BI or web view for issue history.
+4. Optionally add an LLM explanation layer constrained to verified results.
+5. Containerize and deploy after local behavior is fully tested.
 
 ## Current status
 

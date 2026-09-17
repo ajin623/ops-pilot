@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import unittest
 from datetime import date
@@ -150,6 +151,92 @@ class DeliveryBriefIntegrationTests(unittest.TestCase):
         for text in expected_text:
             with self.subTest(text=text):
                 self.assertIn(text, self.report)
+
+    def test_month_parser(self) -> None:
+        self.assertEqual(
+            generate_delivery_brief.parse_month(
+                "2018-08"
+            ),
+            date(2018, 8, 1),
+        )
+
+        invalid_months = (
+            "2018-8",
+            "2018-13",
+            "18-08",
+            "August-2018",
+        )
+
+        for value in invalid_months:
+            with self.subTest(value=value):
+                with self.assertRaises(
+                    argparse.ArgumentTypeError
+                ):
+                    generate_delivery_brief.parse_month(
+                        value
+                    )
+
+    def test_explicit_issue_selection(self) -> None:
+        project_root = Path(__file__).resolve().parents[1]
+        investigation_path = (
+            project_root
+            / "sql"
+            / "investigate_delivery_issue.sql"
+        )
+
+        with psycopg.connect(
+            **generate_delivery_brief.connection_arguments()
+        ) as connection:
+            issue = (
+                generate_delivery_brief.fetch_selected_issue(
+                    connection,
+                    date(2018, 8, 1),
+                )
+            )
+
+            generate_delivery_brief.configure_investigation_target(
+                connection,
+                issue["current_month"],
+            )
+
+            result_sets = (
+                generate_delivery_brief.execute_investigation(
+                    connection,
+                    investigation_path,
+                )
+            )
+
+            report = generate_delivery_brief.build_report(
+                issue,
+                result_sets,
+            )
+
+            with self.assertRaises(RuntimeError):
+                generate_delivery_brief.fetch_selected_issue(
+                    connection,
+                    date(2018, 6, 1),
+                )
+
+        self.assertEqual(
+            issue["previous_month"],
+            date(2018, 7, 1),
+        )
+        self.assertEqual(
+            issue["current_month"],
+            date(2018, 8, 1),
+        )
+        self.assertEqual(
+            issue["on_time_delivery_change_pp"],
+            Decimal("-5.91"),
+        )
+        self.assertIn(
+            "**Period:** July 2018 → August 2018",
+            report,
+        )
+        self.assertIn(
+            "approximately 375.26 orders",
+            report,
+        )
 
     def test_report_excludes_database_password(
         self,
