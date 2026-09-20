@@ -78,6 +78,8 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 | `sql/delivery_detection.sql` | Detects delivery deterioration |
 | `sql/investigate_delivery_issue.sql` | Investigates the worst issue |
 | `data/exports/powerbi/` | Contains portable aggregate BI datasets |
+| `powerbi/OpsPilot_Delivery_Operations.pbix` | Contains the interactive Power BI report |
+| `powerbi/README.md` | Documents the report model, refresh process and validation |
 | `reports/` | Contains generated decision outputs |
 | `.env.example` | Documents database configuration |
 
@@ -88,6 +90,7 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 - PostgreSQL
 - Psycopg 3
 - SQL
+- Power BI and DAX
 - Git and GitHub
 
 No web framework, vector database or language model is required for the current version.
@@ -206,6 +209,23 @@ An alternative output directory can be supplied with:
 
 The four files can be imported directly into Power BI Desktop.
 
+## Power BI report
+
+The version-controlled interactive report is available at [`powerbi/OpsPilot_Delivery_Operations.pbix`](powerbi/OpsPilot_Delivery_Operations.pbix).
+
+The report provides:
+
+- A complete monthly on-time-delivery trend
+- Selection of any detected delivery-issue month
+- Current on-time rate and month-over-month change
+- Current and estimated excess late-order counts
+- State-level incident concentration
+- A prepared seller-level investigation dataset
+
+The report model, relationships, data types, measures and issue-month interactions have been functionally validated. Final visual styling is intentionally deferred.
+
+See [`powerbi/README.md`](powerbi/README.md) for the data model, refresh procedure, verified values and analytical boundaries.
+
 ## Tests
 
 The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies issue selection, the five-result-set investigation contract, deterministic report generation, Power BI export contracts, analytical findings and secret exclusion.
@@ -246,11 +266,11 @@ The current implementation includes:
 - Inventory levels are unavailable, so stockout analysis is outside the current scope.
 - Geographic and seller concentration do not prove causation.
 - Seller analysis is restricted to single-seller orders.
-- The generator currently reports the most severe qualifying issue.
+- The generator selects the most severe qualifying issue by default; `--current-month` can select another detected issue.
 
 ## Roadmap
 
-1. Build a focused Power BI report from the validated export datasets.
+1. Complete final Power BI visual styling and add the seller-detail view.
 2. Add automated CI for repeatable validation.
 3. Add a small API after the analytical interface is stable.
 4. Optionally add an LLM explanation layer constrained to verified results.
@@ -258,4 +278,4 @@ The current implementation includes:
 
 ## Current status
 
-The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief and Power BI export layer are implemented and reproducible.
+The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer and functional interactive report are implemented and reproducible.

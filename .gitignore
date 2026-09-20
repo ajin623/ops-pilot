@@ -34,3 +34,7 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+
+# Power BI temporary files
+~$*.pbix
+*.pbix.tmp
