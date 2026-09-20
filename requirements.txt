@@ -5,3 +5,7 @@ psycopg==3.3.5
 python-dateutil==2.9.0.post0
 six==1.17.0
 typing_extensions==4.16.0
+fastapi==0.141.1
+httpx2==2.13.0
+pydantic==2.13.5
+uvicorn==0.53.0

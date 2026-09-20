@@ -72,6 +72,8 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 | `scripts/load_postgres.py` | Loads PostgreSQL and verifies row counts |
 | `scripts/generate_delivery_brief.py` | Generates the decision brief |
 | `scripts/export_powerbi_data.py` | Exports validated Power BI datasets |
+| `opspilot_api/` | Provides the typed read-only delivery analytics API |
+| `tests/test_api.py` | Validates API routes and response contracts |
 | `sql/schema.sql` | Defines the relational schema |
 | `sql/analytics_views.sql` | Builds the order fact view |
 | `sql/kpis.sql` | Defines monthly KPIs |
@@ -91,9 +93,10 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 - Psycopg 3
 - SQL
 - Power BI and DAX
+- FastAPI, Pydantic and Uvicorn
 - Git and GitHub
 
-No web framework, vector database or language model is required for the current version.
+No vector database or language model is required for the current version.
 
 ## Local setup
 
@@ -226,9 +229,39 @@ The report model, relationships, data types, measures and issue-month interactio
 
 See [`powerbi/README.md`](powerbi/README.md) for the data model, refresh procedure, verified values and analytical boundaries.
 
+## Read-only API
+
+The FastAPI application exposes verified delivery-detection and investigation results without modifying the database.
+
+Start the local API:
+
+~~~bash
+set -a
+source .env
+set +a
+
+.venv/bin/uvicorn opspilot_api.main:app \
+    --host 127.0.0.1 \
+    --port 8000
+~~~
+
+Interactive OpenAPI documentation is available at `http://127.0.0.1:8000/docs`.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Checks API and PostgreSQL availability |
+| `GET` | `/api/v1/delivery/issues` | Lists all qualifying delivery issues |
+| `GET` | `/api/v1/delivery/issues/{YYYY-MM}` | Returns overall incident metrics and impact |
+| `GET` | `/api/v1/delivery/issues/{YYYY-MM}/states` | Returns qualifying state contributors |
+| `GET` | `/api/v1/delivery/issues/{YYYY-MM}/sellers` | Returns seller coverage and contributors |
+
+The API creates a new PostgreSQL connection per request, reuses the validated SQL investigation contract and returns typed Pydantic responses. Database errors are returned without exposing connection details.
+
+The current API is intended for local analytical use. Authentication, rate limiting and production deployment configuration are outside the current scope.
+
 ## Tests
 
-The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies issue selection, the five-result-set investigation contract, deterministic report generation, Power BI export contracts, analytical findings and secret exclusion.
+The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies issue selection, the five-result-set investigation contract, deterministic report generation, Power BI export contracts, read-only API routes, OpenAPI response contracts, analytical findings and secret exclusion.
 
 ~~~bash
 set -a
@@ -256,6 +289,8 @@ The current implementation includes:
 - Database result-set contract validation
 - Deterministic report generation
 - Environment-based secret handling
+- Typed, read-only API response contracts
+- Non-sensitive API database-error responses
 - Explicit analytical limitations and non-causal language
 
 ## Analytical boundaries
@@ -272,10 +307,9 @@ The current implementation includes:
 
 1. Complete final Power BI visual styling and add the seller-detail view.
 2. Add automated CI for repeatable validation.
-3. Add a small API after the analytical interface is stable.
-4. Optionally add an LLM explanation layer constrained to verified results.
-5. Containerize and deploy after local behavior is fully tested.
+3. Optionally add an LLM explanation layer constrained to verified results.
+4. Containerize and deploy after local behavior is fully tested.
 
 ## Current status
 
-The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer and functional interactive report are implemented and reproducible.
+The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report and typed read-only API are implemented and reproducible.
