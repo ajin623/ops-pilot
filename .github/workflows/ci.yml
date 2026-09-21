@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   unit-tests:
-    name: Environment-free unit tests
+    name: Environment-free validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -58,3 +58,37 @@ jobs:
               --start-directory tests \
               --pattern 'test_*_unit.py' \
               --verbose
+
+      - name: Validate container definition
+        env:
+          POSTGRES_DB: opspilot
+          POSTGRES_USER: opspilot
+          POSTGRES_PASSWORD: ci-only-placeholder
+        run: |
+          docker compose \
+            --file compose.yaml \
+            config \
+            --quiet
+
+      - name: Build and inspect application image
+        run: |
+          docker build \
+            --file Dockerfile \
+            --tag opspilot-api:ci \
+            .
+
+          IMAGE_USER="$(
+            docker image inspect \
+              opspilot-api:ci \
+              --format '{{.Config.User}}'
+          )"
+
+          test "$IMAGE_USER" = "opspilot"
+
+          docker run \
+            --rm \
+            --read-only \
+            --tmpfs /tmp \
+            --entrypoint python \
+            opspilot-api:ci \
+            -c "from opspilot_api.main import app; assert app.routes"

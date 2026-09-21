@@ -33,6 +33,7 @@ OpsPilot connects KPI monitoring with a reproducible investigation and decision 
 8. Export compact, validated datasets for Power BI.
 9. Expose typed, read-only delivery analytics through FastAPI.
 10. Validate environment-free application behavior in GitHub Actions.
+11. Run PostgreSQL, deterministic bootstrap and the API through Docker Compose.
 
 ## Architecture
 
@@ -74,12 +75,16 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 | `scripts/inspect_olist.py` | Profiles and validates source data |
 | `scripts/clean_olist.py` | Cleans and validates Olist data |
 | `scripts/load_postgres.py` | Loads PostgreSQL and verifies row counts |
+| `scripts/bootstrap_database.py` | Initializes or validates the containerized analytical database |
 | `scripts/generate_delivery_brief.py` | Generates the decision brief |
 | `scripts/export_powerbi_data.py` | Exports validated Power BI datasets |
 | `opspilot_api/` | Provides the typed read-only delivery analytics API |
 | `tests/test_api.py` | Validates database-backed API routes and response contracts |
 | `tests/test_api_unit.py` | Validates API behavior without a database connection |
+| `tests/test_bootstrap_unit.py` | Validates database bootstrap state handling |
 | `.github/workflows/ci.yml` | Runs environment-free validation in GitHub Actions |
+| `Dockerfile` | Builds the non-root API and bootstrap application image |
+| `compose.yaml` | Defines PostgreSQL, bootstrap and API services |
 | `sql/schema.sql` | Defines the relational schema |
 | `sql/analytics_views.sql` | Builds the order fact view |
 | `sql/kpis.sql` | Defines monthly KPIs |
@@ -89,7 +94,8 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 | `powerbi/OpsPilot_Delivery_Operations.pbix` | Contains the interactive Power BI report |
 | `powerbi/README.md` | Documents the report model, refresh process and validation |
 | `reports/` | Contains generated decision outputs |
-| `.env.example` | Documents database configuration |
+| `.env.example` | Documents database and container port configuration |
+| `.dockerignore` | Excludes local data, secrets and development artifacts from image builds |
 
 ## Technology
 
@@ -101,6 +107,7 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 - Power BI and DAX
 - FastAPI, Pydantic and Uvicorn
 - Git and GitHub
+- Docker and Docker Compose
 
 No vector database or language model is required for the current version.
 
@@ -157,6 +164,52 @@ Create the schema, load the cleaned data and build the views:
 "${PSQL_COMMAND[@]}" --file sql/kpis.sql
 "${PSQL_COMMAND[@]}" --file sql/delivery_detection.sql
 ~~~
+
+## Run the containerized stack
+
+The local Compose stack contains three services:
+
+| Service | Responsibility |
+| --- | --- |
+| `db` | Runs PostgreSQL 18 with a persistent named volume |
+| `bootstrap` | Creates the schema, loads the processed dataset when necessary, builds the analytical views and validates row counts |
+| `api` | Runs the typed read-only FastAPI application |
+
+The processed Olist CSV files must exist in `data/processed/olist/`. They are mounted read-only into the one-time bootstrap service and are never copied into the application image.
+
+Start the complete stack:
+
+~~~bash
+docker compose up --build --detach
+~~~
+
+The database is exposed only on `127.0.0.1:55432` by default, avoiding the local PostgreSQL port. The API is available on `127.0.0.1:8000`.
+
+Check the services and API:
+
+~~~bash
+docker compose ps --all
+
+curl --fail http://127.0.0.1:8000/health
+~~~
+
+Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
+
+Stop and remove the containers while preserving the database volume:
+
+~~~bash
+docker compose down
+~~~
+
+To deliberately remove the containerized database and force a clean reload on the next startup:
+
+~~~bash
+docker compose down --volumes
+~~~
+
+The final command deletes the containerized PostgreSQL volume. It does not affect the separate PostgreSQL installation running on the host.
+
+The application containers run as a non-root user with a read-only filesystem, dropped Linux capabilities and loopback-only published ports. The Compose configuration is intended for reproducible local validation; production deployment requires external secret management and a managed database.
 
 ## Generate the decision brief
 
@@ -267,9 +320,9 @@ The current API is intended for local analytical use. Authentication, rate limit
 
 ## Continuous integration
 
-The GitHub Actions workflow runs on pushes and pull requests targeting `main`. It installs the pinned Python dependencies, checks dependency consistency, compiles the Python modules and runs the environment-free API unit suite.
+The GitHub Actions workflow runs on pushes and pull requests targeting `main`. It installs the pinned Python dependencies, checks dependency consistency, compiles the Python modules and runs the environment-free unit suite.
 
-The CI suite explicitly removes PostgreSQL environment variables and uses mocked service boundaries, so repository validation does not require database credentials or the local Olist dataset.
+CI also validates the Compose configuration, builds the application image, verifies its non-root runtime identity and confirms that the API imports without opening a database connection. It does not require database credentials, the local Olist dataset or running PostgreSQL services.
 
 ## Tests
 
@@ -319,6 +372,9 @@ The current implementation includes:
 - Environment-based secret handling
 - Typed, read-only API response contracts
 - Non-sensitive API database-error responses
+- Repeatable database bootstrap with partial-load rejection
+- Non-root, read-only application containers
+- Loopback-only container port publishing
 - Explicit analytical limitations and non-causal language
 
 ## Analytical boundaries
@@ -335,8 +391,8 @@ The current implementation includes:
 
 1. Complete final Power BI visual styling and add the seller-detail view.
 2. Optionally add an LLM explanation layer constrained to verified results.
-3. Containerize and deploy after local behavior is fully tested.
+3. Deploy the containerized API with production-grade secret handling and managed PostgreSQL.
 
 ## Current status
 
-The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report, typed read-only API and automated environment-free CI validation are implemented and reproducible.
+The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report, typed read-only API, automated CI and validated local container stack are implemented and reproducible.
