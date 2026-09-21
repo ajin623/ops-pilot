@@ -1,5 +1,7 @@
 # OpsPilot
 
+[![CI](https://github.com/ajin623/ops-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/ajin623/ops-pilot/actions/workflows/ci.yml)
+
 **Detect. Investigate. Decide.**
 
 OpsPilot is a deterministic operational analytics and decision-support project built on historical e-commerce data. It transforms raw order data into validated business KPIs, detects material delivery deterioration, investigates where the problem is concentrated and generates an evidence-backed incident brief.
@@ -29,6 +31,8 @@ OpsPilot connects KPI monitoring with a reproducible investigation and decision 
 6. Investigate overall, geographic and seller-level contributors.
 7. Generate a deterministic Markdown incident brief.
 8. Export compact, validated datasets for Power BI.
+9. Expose typed, read-only delivery analytics through FastAPI.
+10. Validate environment-free application behavior in GitHub Actions.
 
 ## Architecture
 
@@ -73,7 +77,9 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 | `scripts/generate_delivery_brief.py` | Generates the decision brief |
 | `scripts/export_powerbi_data.py` | Exports validated Power BI datasets |
 | `opspilot_api/` | Provides the typed read-only delivery analytics API |
-| `tests/test_api.py` | Validates API routes and response contracts |
+| `tests/test_api.py` | Validates database-backed API routes and response contracts |
+| `tests/test_api_unit.py` | Validates API behavior without a database connection |
+| `.github/workflows/ci.yml` | Runs environment-free validation in GitHub Actions |
 | `sql/schema.sql` | Defines the relational schema |
 | `sql/analytics_views.sql` | Builds the order fact view |
 | `sql/kpis.sql` | Defines monthly KPIs |
@@ -259,9 +265,31 @@ The API creates a new PostgreSQL connection per request, reuses the validated SQ
 
 The current API is intended for local analytical use. Authentication, rate limiting and production deployment configuration are outside the current scope.
 
+## Continuous integration
+
+The GitHub Actions workflow runs on pushes and pull requests targeting `main`. It installs the pinned Python dependencies, checks dependency consistency, compiles the Python modules and runs the environment-free API unit suite.
+
+The CI suite explicitly removes PostgreSQL environment variables and uses mocked service boundaries, so repository validation does not require database credentials or the local Olist dataset.
+
 ## Tests
 
-The integration suite uses Python's standard `unittest` module and the loaded local PostgreSQL dataset. It verifies issue selection, the five-result-set investigation contract, deterministic report generation, Power BI export contracts, read-only API routes, OpenAPI response contracts, analytical findings and secret exclusion.
+Run the same environment-free unit suite locally:
+
+~~~bash
+env \
+    -u POSTGRES_DB \
+    -u POSTGRES_USER \
+    -u POSTGRES_PASSWORD \
+    -u POSTGRES_HOST \
+    -u POSTGRES_PORT \
+    .venv/bin/python -m unittest \
+        discover \
+        --start-directory tests \
+        --pattern 'test_*_unit.py' \
+        --verbose
+~~~
+
+The complete integration suite requires the loaded local PostgreSQL dataset. It verifies issue selection, the five-result-set investigation contract, deterministic report generation, Power BI export contracts, read-only API routes, OpenAPI response contracts, analytical findings and secret exclusion.
 
 ~~~bash
 set -a
@@ -306,10 +334,9 @@ The current implementation includes:
 ## Roadmap
 
 1. Complete final Power BI visual styling and add the seller-detail view.
-2. Add automated CI for repeatable validation.
-3. Optionally add an LLM explanation layer constrained to verified results.
-4. Containerize and deploy after local behavior is fully tested.
+2. Optionally add an LLM explanation layer constrained to verified results.
+3. Containerize and deploy after local behavior is fully tested.
 
 ## Current status
 
-The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report and typed read-only API are implemented and reproducible.
+The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report, typed read-only API and automated environment-free CI validation are implemented and reproducible.
