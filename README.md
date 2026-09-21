@@ -8,6 +8,12 @@ OpsPilot is a deterministic operational analytics and decision-support project b
 
 The current version uses transparent Python and SQL calculations. It does not use an LLM to calculate metrics or claim unsupported root causes.
 
+## Release
+
+This repository is prepared as the `v1.0.0` portfolio release. It includes the validated analytical pipeline, Power BI report, read-only API, automated CI and reproducible local container stack.
+
+See [CHANGELOG.md](CHANGELOG.md) for the release history.
+
 ## Business problem
 
 Operations teams often have dashboards showing that a KPI changed but still need to answer:
@@ -94,6 +100,7 @@ The complete generated brief is available at `reports/delivery-incident-2018-02.
 | `powerbi/OpsPilot_Delivery_Operations.pbix` | Contains the interactive Power BI report |
 | `powerbi/README.md` | Documents the report model, refresh process and validation |
 | `reports/` | Contains generated decision outputs |
+| `CHANGELOG.md` | Documents portfolio release history |
 | `.env.example` | Documents database and container port configuration |
 | `.dockerignore` | Excludes local data, secrets and development artifacts from image builds |
 
@@ -395,4 +402,8 @@ The current implementation includes:
 
 ## Current status
 
-The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report, typed read-only API, automated CI and validated local container stack are implemented and reproducible.
+The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report, typed read-only API, automated CI and validated local container stack are implemented, reproducible and packaged as the `v1.0.0` portfolio release.
+
+## License
+
+This repository is available for portfolio review. No open-source license is granted, and all rights are reserved.
