@@ -2,6 +2,23 @@
 
 All notable portfolio releases of OpsPilot are documented here.
 
+## [1.0.1] - 2026-09-22
+
+### Changed
+
+- Completed the Power BI delivery-incident overview visual design.
+- Improved report labels and selected-issue presentation.
+- Added the final February 2018 dashboard screenshot.
+- Embedded the dashboard preview in the main and Power BI documentation.
+- Updated the report status and project roadmap.
+
+### Validation
+
+- Revalidated the four detected issue-month interactions.
+- Confirmed the February 2018 cards against the verified analytical results.
+- Validated the updated PBIX artifact and PNG dashboard image.
+- Retained the existing analytical model, API and container contracts.
+
 ## [1.0.0] - 2026-09-21
 
 ### Added

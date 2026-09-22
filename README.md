@@ -10,7 +10,7 @@ The current version uses transparent Python and SQL calculations. It does not us
 
 ## Release
 
-This repository is prepared as the `v1.0.0` portfolio release. It includes the validated analytical pipeline, Power BI report, read-only API, automated CI and reproducible local container stack.
+The current portfolio release is prepared as `v1.0.1`. It includes the validated analytical pipeline, completed Power BI incident-overview design, read-only API, automated CI and reproducible local container stack.
 
 See [CHANGELOG.md](CHANGELOG.md) for the release history.
 
@@ -282,6 +282,10 @@ The four files can be imported directly into Power BI Desktop.
 
 The version-controlled interactive report is available at [`powerbi/OpsPilot_Delivery_Operations.pbix`](powerbi/OpsPilot_Delivery_Operations.pbix).
 
+![OpsPilot delivery incident dashboard](docs/images/opspilot-delivery-dashboard.png)
+
+*The completed incident-overview page showing the verified February 2018 issue.*
+
 The report provides:
 
 - A complete monthly on-time-delivery trend
@@ -291,7 +295,7 @@ The report provides:
 - State-level incident concentration
 - A prepared seller-level investigation dataset
 
-The report model, relationships, data types, measures and issue-month interactions have been functionally validated. Final visual styling is intentionally deferred.
+The report model, relationships, data types, DAX measures, issue-month interactions and final incident-overview styling have been validated. A dedicated seller-detail page remains an optional future enhancement.
 
 See [`powerbi/README.md`](powerbi/README.md) for the data model, refresh procedure, verified values and analytical boundaries.
 
@@ -396,13 +400,13 @@ The current implementation includes:
 
 ## Roadmap
 
-1. Complete final Power BI visual styling and add the seller-detail view.
+1. Optionally add a dedicated Power BI seller-detail page.
 2. Optionally add an LLM explanation layer constrained to verified results.
 3. Deploy the containerized API with production-grade secret handling and managed PostgreSQL.
 
 ## Current status
 
-The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, functional interactive report, typed read-only API, automated CI and validated local container stack are implemented, reproducible and packaged as the `v1.0.0` portfolio release.
+The data pipeline, PostgreSQL model, KPI layer, delivery detection, detailed investigation, deterministic decision brief, Power BI export layer, completed incident-overview report, typed read-only API, automated CI and validated local container stack are implemented and reproducible. The completed dashboard presentation is prepared for the `v1.0.1` patch release.
 
 ## License
 

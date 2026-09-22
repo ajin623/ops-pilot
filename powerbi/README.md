@@ -11,7 +11,7 @@ The report allows users to:
 - Compare the current on-time rate with the previous month
 - Quantify current and excess late orders
 - Identify states contributing most to the selected incident
-- Explore seller-level investigation data
+- Retain validated seller-level investigation data for future report expansion
 
 The report presents deterministic analytical results. It does not establish causal relationships.
 
@@ -57,7 +57,13 @@ The `_Measures` table contains the report's DAX measures and has no analytical r
 - Excess-late-order card
 - State excess-late-order ranking
 
-Detailed seller visuals and final visual styling are intentionally deferred.
+The incident-overview page uses a completed dark visual theme with consistent KPI, chart and control styling. A dedicated seller-detail page remains an optional future enhancement.
+
+## Dashboard preview
+
+![OpsPilot delivery incident dashboard](../docs/images/opspilot-delivery-dashboard.png)
+
+The preview shows the verified February 2018 incident: an 84.01% on-time delivery rate, a 9.43 percentage-point decline, 1,048 current late orders and approximately 617.74 excess late orders.
 
 ## Verified values
 
@@ -103,4 +109,4 @@ When the repository is cloned to a different location, Power BI Desktop may requ
 
 ## Status
 
-The report model, relationships, filtering, measures and cross-table interaction have been functionally validated. Final layout and visual styling will be completed separately.
+The report model, relationships, filtering, DAX measures, cross-table interaction and incident-overview visual design have been validated. The completed report and portfolio screenshot are included in the repository.
